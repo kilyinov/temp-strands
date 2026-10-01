@@ -1,0 +1,15 @@
+[
+  {"name": "dual_career_minister", "query": "Alex Morgan", "expect_status": "ok", "expect_person_id": "oa:person/20001",
+   "expect_claims_topics": ["housing", "economy", "education"], "expect_parliaments": ["commonwealth", "victoria"],
+   "forbidden_quotes": ["That this bill be now read a second time", "The housing crisis is a myth", "It will push up rents"]},
+  {"name": "honorific_name_form", "query": "MORGAN, the Hon. Alex", "expect_status": "ok", "expect_person_id": "oa:person/20001"},
+  {"name": "shadow_minister_quoting_opponent", "query": "Sam Taylor", "expect_status": "ok", "expect_person_id": "oa:person/20002",
+   "expect_claims_topics": ["healthcare", "economy"], "expect_parliaments": ["commonwealth"],
+   "forbidden_quotes": ["Every dollar we spend on social housing is a dollar saved in our hospitals"]},
+  {"name": "surname_only_is_ambiguous", "query": "Taylor", "expect_status": "needs_disambiguation",
+   "expect_candidates": ["oa:person/20002", "vic:member/9002"]},
+  {"name": "sparse_record_no_fabrication", "query": "Pat Lee", "expect_status": "ok", "expect_person_id": "vic:member/9003",
+   "expect_no_claims_topics": ["housing", "healthcare", "economy", "education"],
+   "forbidden_quotes": ["rent caps will reduce housing supply"]},
+  {"name": "unknown_member", "query": "Nobody Real", "expect_status": "not_found"}
+]

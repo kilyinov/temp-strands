@@ -1,0 +1,6 @@
+{"result": {"totalMatching": 1, "hits": [
+ {"id": "HANSARD-2000000001-10001", "date1": "2019-08-14T01:00:00", "title": "14 August 2019", "category": "Legislative Assembly",
+  "status": "Final", "house": 10,
+  "downloadButton": {"suffix": "pdf", "href": "/globalassets/hansard-daily-pdfs/sample.pdf"},
+  "onlineButton": {"suffix": "next", "href": "/parliamentary-activity/hansard/hansard-details/HANSARD-2000000001-10001"}}
+]}}

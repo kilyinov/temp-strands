@@ -1,0 +1,14 @@
+{"result": {"totalMatching": 4, "hits": [
+ {"id": "a1", "title": "Alex Morgan", "subtitle": "", "house": "10", "url": "/members/alex-morgan/",
+  "image": {"src": "/images/member-photo/9001.jpg"},
+  "memberships": [{"title": "Member for", "details": ["Eastvale"]}, {"title": "House", "details": ["Legislative Assembly"]}, {"title": "Party", "details": ["Australian Labor Party"]}]},
+ {"id": "a2", "title": "Samantha Taylor", "subtitle": "", "house": "20", "url": "/members/samantha-taylor/",
+  "image": {"src": "/images/member-photo/9002.jpg"},
+  "memberships": [{"title": "Member for", "details": ["Northern Metropolitan"]}, {"title": "House", "details": ["Legislative Council"]}, {"title": "Party", "details": ["Australian Greens"]}]},
+ {"id": "a3", "title": "Pat Lee", "subtitle": "", "house": "10", "url": "/members/pat-lee/",
+  "image": {"src": "/images/member-photo/9003.jpg"},
+  "memberships": [{"title": "Member for", "details": ["Lakeside"]}, {"title": "House", "details": ["Legislative Assembly"]}, {"title": "Party", "details": ["Liberal Party"]}]},
+ {"id": "a4", "title": "Jordan Blake", "subtitle": "", "house": "10", "url": "/members/jordan-blake/",
+  "image": {"src": "/images/member-photo/9004.jpg"},
+  "memberships": [{"title": "Member for", "details": ["Hilltop"]}, {"title": "House", "details": ["Legislative Assembly"]}, {"title": "Party", "details": ["Australian Labor Party"]}]}
+]}}
