@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import threading
 from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from datetime import date, datetime, timezone
@@ -107,14 +108,24 @@ class SpeechStore:
         self.conn = sqlite3.connect(str(path), check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         self.conn.executescript(SCHEMA)
+        self._lock = threading.RLock()
 
     def close(self) -> None:
-        self.conn.close()
+        with self._lock:
+            self.conn.close()
 
     @contextmanager
     def transaction(self) -> Iterator[sqlite3.Connection]:
-        with self.conn:
+        with self._lock, self.conn:
             yield self.conn
+
+    def _rows(self, sql: str, params: Iterable[Any] = ()) -> list[sqlite3.Row]:
+        with self._lock:
+            return self.conn.execute(sql, tuple(params)).fetchall()
+
+    def _row(self, sql: str, params: Iterable[Any] = ()) -> sqlite3.Row | None:
+        rows = self._rows(sql, params)
+        return rows[0] if rows else None
 
     # People -----------------------------------------------------------------------------------
 
@@ -165,26 +176,22 @@ class SpeechStore:
             )
 
     def canonical_id(self, person_id: str) -> str:
-        row = self.conn.execute(
-            "SELECT canonical_person_id FROM crosswalk WHERE alias_person_id=?", (person_id,)
-        ).fetchone()
+        row = self._row("SELECT canonical_person_id FROM crosswalk WHERE alias_person_id=?", (person_id,))
         return str(row[0]) if row else person_id
 
     def person_group(self, person_id: str) -> list[str]:
         canonical = self.canonical_id(person_id)
-        rows = self.conn.execute(
-            "SELECT alias_person_id FROM crosswalk WHERE canonical_person_id=?", (canonical,)
-        ).fetchall()
+        rows = self._rows("SELECT alias_person_id FROM crosswalk WHERE canonical_person_id=?", (canonical,))
         return [canonical, *sorted(r[0] for r in rows)]
 
     def person_for_source(self, source_id: str) -> str | None:
-        row = self.conn.execute("SELECT person_id FROM person_sources WHERE source_id=?", (source_id,)).fetchone()
+        row = self._row("SELECT person_id FROM person_sources WHERE source_id=?", (source_id,))
         return self.canonical_id(row[0]) if row else None
 
     def list_people(self) -> list[Person]:
         """Canonical people only (crosswalk aliases are merged into their canonical record)."""
-        ids = [r[0] for r in self.conn.execute("SELECT person_id FROM persons ORDER BY person_id")]
-        aliases = {r[0] for r in self.conn.execute("SELECT alias_person_id FROM crosswalk")}
+        ids = [r[0] for r in self._rows("SELECT person_id FROM persons ORDER BY person_id")]
+        aliases = {r[0] for r in self._rows("SELECT alias_person_id FROM crosswalk")}
         people = [self.get_person(pid) for pid in ids if pid not in aliases]
         return [p for p in people if p is not None]
 
@@ -192,9 +199,7 @@ class SpeechStore:
         group = self.person_group(person_id)
         rows = {
             r["person_id"]: r
-            for r in self.conn.execute(
-                f"SELECT * FROM persons WHERE person_id IN ({','.join('?' * len(group))})", group
-            )
+            for r in self._rows(f"SELECT * FROM persons WHERE person_id IN ({','.join('?' * len(group))})", group)
         }
         if group[0] not in rows:
             return None
@@ -209,7 +214,7 @@ class SpeechStore:
         placeholders = ",".join("?" * len(group))
         sources = [
             r[0]
-            for r in self.conn.execute(
+            for r in self._rows(
                 f"SELECT source_id FROM person_sources WHERE person_id IN ({placeholders}) ORDER BY source_id", group
             )
         ]
@@ -223,9 +228,7 @@ class SpeechStore:
                 start=_d(r["start"]),
                 end=_d(r["end"]),
             )
-            for r in self.conn.execute(
-                f"SELECT * FROM memberships WHERE person_id IN ({placeholders}) ORDER BY start", group
-            )
+            for r in self._rows(f"SELECT * FROM memberships WHERE person_id IN ({placeholders}) ORDER BY start", group)
         ]
         primary = rows[group[0]]["name"]
         return Person(
@@ -306,20 +309,20 @@ class SpeechStore:
         )
 
     def get_passage(self, passage_id: str) -> Passage | None:
-        row = self.conn.execute("SELECT * FROM passages WHERE passage_id=?", (passage_id,)).fetchone()
+        row = self._row("SELECT * FROM passages WHERE passage_id=?", (passage_id,))
         return self._row_to_passage(row) if row else None
 
     def passage_topics(self, passage_id: str) -> list[TopicTag]:
         return [
             TopicTag(topic=Topic(r["topic"]), score=r["score"], matched_terms=json.loads(r["terms"]))
-            for r in self.conn.execute("SELECT * FROM passage_topics WHERE passage_id=?", (passage_id,))
+            for r in self._rows("SELECT * FROM passage_topics WHERE passage_id=?", (passage_id,))
         ]
 
     def _speaker_ids(self, person_id: str) -> list[str]:
         group = self.person_group(person_id)
-        rows = self.conn.execute(
+        rows = self._rows(
             f"SELECT source_id FROM person_sources WHERE person_id IN ({','.join('?' * len(group))})", group
-        ).fetchall()
+        )
         return sorted({r[0] for r in rows} | set(group))
 
     def search_passages(
@@ -360,7 +363,7 @@ class SpeechStore:
             params.append(query)
         sql.append("ORDER BY topic_score DESC, p.date ASC, p.passage_id ASC LIMIT ?")
         params.append(limit)
-        rows = self.conn.execute(" ".join(sql), params).fetchall()
+        rows = self._rows(" ".join(sql), params)
         return [(self._row_to_passage(r), float(r["topic_score"])) for r in rows]
 
     def topic_counts(self, person_id: str, start: date | None = None, end: date | None = None) -> dict[Topic, int]:
@@ -377,18 +380,18 @@ class SpeechStore:
         if end:
             sql += " AND p.date <= ?"
             params.append(end.isoformat())
-        rows = self.conn.execute(sql + " GROUP BY t.topic", params).fetchall()
+        rows = self._rows(sql + " GROUP BY t.topic", params)
         counts = {Topic(r[0]): int(r[1]) for r in rows}
         return {t: counts.get(t, 0) for t in Topic}
 
     def speech_dates(self, person_id: str) -> list[tuple[date, str]]:
         """(date, parliament) for every substantive passage by the person; used for coverage planning."""
         speakers = self._speaker_ids(person_id)
-        rows = self.conn.execute(
+        rows = self._rows(
             f"SELECT date, parliament FROM passages WHERE source_speaker_id IN ({','.join('?' * len(speakers))}) "
             f"AND talktype NOT IN ({','.join('?' * len(EXCLUDED_TALKTYPES))}) ORDER BY date",
             [*speakers, *EXCLUDED_TALKTYPES],
-        ).fetchall()
+        )
         return [(date.fromisoformat(r[0]), str(r[1])) for r in rows]
 
     # Coverage and cache -----------------------------------------------------------------------
@@ -409,23 +412,23 @@ class SpeechStore:
             )
 
     def coverage(self) -> list[dict[str, Any]]:
-        rows = self.conn.execute(
+        rows = self._rows(
             "SELECT source, parliament, chamber, MIN(sitting_date) AS first, MAX(sitting_date) AS last, "
             "COUNT(*) AS sittings, SUM(passages) AS passages FROM coverage GROUP BY source, parliament, chamber"
-        ).fetchall()
+        )
         return [dict(r) for r in rows]
 
     def has_sitting(self, source: str, chamber: str, sitting_date: date) -> bool:
         return (
-            self.conn.execute(
+            self._row(
                 "SELECT 1 FROM coverage WHERE source=? AND chamber=? AND sitting_date=?",
                 (source, chamber, sitting_date.isoformat()),
-            ).fetchone()
+            )
             is not None
         )
 
     def cache_get(self, key: str) -> Any | None:
-        row = self.conn.execute("SELECT value FROM summary_cache WHERE cache_key=?", (key,)).fetchone()
+        row = self._row("SELECT value FROM summary_cache WHERE cache_key=?", (key,))
         return json.loads(row[0]) if row else None
 
     def cache_put(self, key: str, value: Any) -> None:
