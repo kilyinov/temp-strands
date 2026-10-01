@@ -160,12 +160,22 @@ def tag_passage(text: str, threshold: float = TAG_THRESHOLD) -> list[TopicTag]:
     ]
 
 
+REPORTED_SPEECH = re.compile(
+    r"\b(?:the (?:honourable |hon\.? )?(?:member|senator|minister|leader|shadow|opposition|premier|treasurer)\b[^.?!]{0,80}?"
+    r"|(?:he|she|they)\s+)(?:has |have |had )?(?:said|says|spoke|claimed|claims|stated|argued|suggested|told|asserted)\b",
+    re.IGNORECASE,
+)
+
+
 def best_sentences(text: str, topic: Topic, sentences: Iterable[str], limit: int = 1) -> list[str]:
-    """Rank sentences of a passage by topic-term density, for extractive quotes."""
+    """Rank sentences of a passage by topic-term density, for extractive quotes.
+
+    Sentences reporting what someone else said are skipped so they are not cited as the member's own position.
+    """
     patterns = _PATTERNS[topic]
     scored = []
     for idx, sentence in enumerate(sentences):
-        if len(sentence) < 40 or len(sentence) > 400:
+        if len(sentence) < 40 or len(sentence) > 400 or REPORTED_SPEECH.search(sentence):
             continue
         score = sum(weight for _, weight, pattern in patterns if pattern.search(sentence))
         if score:
@@ -174,4 +184,4 @@ def best_sentences(text: str, topic: Topic, sentences: Iterable[str], limit: int
     return [s for _, _, s in scored[:limit]]
 
 
-__all__ = ["LEXICON", "TAG_THRESHOLD", "TOPICS", "best_sentences", "score_topics", "tag_passage"]
+__all__ = ["LEXICON", "REPORTED_SPEECH", "TAG_THRESHOLD", "TOPICS", "best_sentences", "score_topics", "tag_passage"]

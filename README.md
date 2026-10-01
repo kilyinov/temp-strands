@@ -119,7 +119,7 @@ Example client config:
 ## Observability
 
 `setup_telemetry()` wires Strands' OpenTelemetry tracing and metrics. Each profile request is one trace:
-`mp_profile.request` → Strands graph → node spans → agent/model/tool spans, with person, topic and prompt
+`mp_profile.build_profile` → Strands graph → node spans → agent/model/tool spans, with person, topic and prompt
 version as attributes. Domain metrics (`mp_profile.*`) include request latency, passages considered,
 claims emitted, verifier rejections by check, cache hits, tool calls/latency, tokens, ingestion counts,
 unattributed passages and eval scores.

@@ -22,7 +22,7 @@ from ..text import split_sentences
 from ..topics import best_sentences
 from .planner import PlannedPeriod
 
-PROMPT_VERSION = "2026-10-01.1"
+PROMPT_VERSION = "2026-10-01.2"
 
 
 class DraftClaim(BaseModel):
@@ -52,7 +52,7 @@ class Summarizer(Protocol):
 
 
 class ExtractiveSummarizer:
-    name = "extractive"
+    name = f"extractive:{PROMPT_VERSION}"
 
     async def summarize_period(
         self, person: Person, topic: Topic, period: PlannedPeriod, passages: list[Passage], max_claims: int

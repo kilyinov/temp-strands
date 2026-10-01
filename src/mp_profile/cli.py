@@ -64,7 +64,7 @@ def render_markdown(profile: MPProfile) -> str:
             lines += ["", f"### {period.label}", period.summary]
             for c in period.claims:
                 lines.append(
-                    f'- {c.paraphrase} "{c.quote}" — {c.ref.date}, {c.ref.debate_title} [{c.capacity}] {c.ref.url}'
+                    f'- {c.paraphrase} "{c.quote}" — {c.ref.date}, {c.ref.parliament} / {c.ref.chamber}, {c.ref.debate_title} [{c.capacity}] {c.ref.url}'
                 )
         for gap in cat.gaps:
             lines.append(f"- _Gap:_ {gap}")

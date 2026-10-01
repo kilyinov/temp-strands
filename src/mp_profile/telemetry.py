@@ -5,18 +5,22 @@ token/latency metrics. This module adds the domain signals the evals and dashboa
 
 Env:
   OTEL_EXPORTER_OTLP_ENDPOINT     send traces + metrics to a collector (Langfuse, Jaeger, CloudWatch ...)
-  MP_PROFILE_CONSOLE_TELEMETRY=1  print spans to stdout for local debugging
+  MP_PROFILE_CONSOLE_TELEMETRY=1  print spans and metrics to stderr (stdout stays clean for JSON and MCP stdio)
 """
 
 from __future__ import annotations
 
 import os
+import sys
 import time
 from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any
 
 from opentelemetry import metrics
+from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import ConsoleMetricExporter, MetricReader, PeriodicExportingMetricReader
 from strands.hooks import (
     AfterInvocationEvent,
     AfterNodeCallEvent,
@@ -42,8 +46,14 @@ def setup_telemetry(service_name: str = "mp-profile") -> StrandsTelemetry:
     if otlp:
         telemetry.setup_otlp_exporter()
     if console:
-        telemetry.setup_console_exporter()
-    telemetry.setup_meter(enable_console_exporter=console, enable_otlp_exporter=otlp)
+        telemetry.setup_console_exporter(out=sys.stderr)
+    readers: list[MetricReader] = []
+    if console:
+        readers.append(PeriodicExportingMetricReader(ConsoleMetricExporter(out=sys.stderr)))
+    if otlp:
+        readers.append(PeriodicExportingMetricReader(OTLPMetricExporter()))
+    telemetry.meter_provider = MeterProvider(resource=telemetry.resource, metric_readers=readers)
+    metrics.set_meter_provider(telemetry.meter_provider)
     _telemetry = telemetry
     return telemetry
 
