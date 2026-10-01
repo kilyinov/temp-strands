@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<members>
+ <member division="Riverbend" firstname="Alex" fromdate="2007-11-24" fromwhy="general_election" house="representatives" id="uk.org.publicwhip/member/501" lastname="Morgan" party="Australian Labor Party" title="" todate="2013-09-07" towhy="defeated"/>
+ <member division="Hillcrest" firstname="Sam" fromdate="2010-08-21" fromwhy="general_election" house="representatives" id="uk.org.publicwhip/member/502" lastname="Taylor" party="Liberal Party" title="" todate="9999-12-31" towhy="still_in_office"/>
+ <member division="Coastal" firstname="Chris" fromdate="2010-08-21" fromwhy="general_election" house="representatives" id="uk.org.publicwhip/member/503" lastname="Nguyen" party="Liberal Party" title="" todate="2016-07-02" towhy="retired"/>
+</members>

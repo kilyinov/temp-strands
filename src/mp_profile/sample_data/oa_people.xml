@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<people>
+ <person id="uk.org.publicwhip/person/20001" latestname="Alex Morgan">
+  <office id="uk.org.publicwhip/member/501"/>
+ </person>
+ <person id="uk.org.publicwhip/person/20002" latestname="Sam Taylor">
+  <office id="uk.org.publicwhip/member/502"/>
+ </person>
+ <person id="uk.org.publicwhip/person/20003" latestname="Chris Nguyen">
+  <office id="uk.org.publicwhip/member/503"/>
+ </person>
+ <person id="uk.org.publicwhip/person/20004" latestname="Robin Ellis">
+  <office id="uk.org.publicwhip/lord/100801"/>
+ </person>
+</people>
